@@ -292,6 +292,20 @@ $ mount -o bind /mnt/otherdisk/nix /nix</screen>
 </varlistentry>
 
 
+<varlistentry><term><envar>NIX_NETRC_FILE</envar></term>
+
+  <listitem><para>If set to an absolute path to a <literal>netrc</literal> file,
+  Nix will use the HTTP authentication credentials in this file when trying to
+  download from a remote host.</para>
+
+  <para>The <literal>netrc</literal> file consists of zero or more lines like:
+  <literal>machine <replaceable>my-machine</replaceable> login
+  <replaceable>my-username</replaceable> password
+  <replaceable>my-password</replaceable></literal></para></listitem>
+
+</varlistentry>
+
+
 <varlistentry><term><envar>NIX_SHOW_STATS</envar></term>
 
   <listitem><para>If set to <literal>1</literal>, Nix will print some
