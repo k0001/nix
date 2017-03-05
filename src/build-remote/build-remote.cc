@@ -264,7 +264,7 @@ connected:
         alarm(0);
         signal(SIGALRM, old);
         copyPaths(store, ref<Store>(sshStore), inputs,
-                  settings.buildHookUseSubstitutes);
+                  settings.buildRemoteUseSubstitutes);
         uploadLock = -1;
 
         printError("building ‘%s’ on ‘%s’", drvPath, hostName);
@@ -274,7 +274,7 @@ connected:
         if (!outputs.empty()) {
             setenv("NIX_HELD_LOCKS", concatStringsSep(" ", outputs).c_str(), 1); /* FIXME: ugly */
             copyPaths(ref<Store>(sshStore), store, outputs,
-                      settings.buildHookUseSubstitutes);
+                      settings.buildRemoteUseSubstitutes);
         }
         return;
     });

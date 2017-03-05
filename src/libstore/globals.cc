@@ -68,7 +68,7 @@ Settings::Settings()
     lockCPU = getEnv("NIX_AFFINITY_HACK", "1") == "1";
     showTrace = false;
     enableImportNative = false;
-    buildHookUseSubstitutes = false;
+    buildRemoteUseSubstitutes = false;
     netrcFile = fmt("%s/%s", nixConfDir, "netrc");
 }
 
@@ -185,7 +185,7 @@ void Settings::update()
     _get(keepGoing, "keep-going");
     _get(keepFailed, "keep-failed");
     _get(netrcFile, "netrc-file");
-    _get(buildHookUseSubstitutes, "build-hook-use-substitutes");
+    _get(buildRemoteUseSubstitutes, "build-remote-use-substitutes");
 }
 
 

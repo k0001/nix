@@ -302,10 +302,10 @@ flag, e.g. <literal>--option gc-keep-outputs false</literal>.</para>
   </varlistentry>
 
 
-  <varlistentry><term><literal>build-hook-use-substitutes</literal></term>
+  <varlistentry><term><literal>build-remote-use-substitutes</literal></term>
 
     <listitem><para>If set to <literal>true</literal>, Nix will instruct
-    remote build hooks to use their own binary substitutes if available. In
+    remote build hosts to use their own binary substitutes if available. In
     practical terms, this means that remote hosts will fetch as many build
     dependencies as possible from their own substitutes (e.g, from
     <literal>cache.nixos.org</literal>), instead of waiting for this host to

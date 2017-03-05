@@ -195,8 +195,8 @@ struct Settings {
        downloads. */
     Path netrcFile;
 
-    /* Whether the build hook should be instructed to use substitutes. */
-    bool buildHookUseSubstitutes;
+    /* Whether remote build hosts should be instructed to use substitutes. */
+    bool buildRemoteUseSubstitutes;
 
 private:
     SettingsMap settings, overrides;
