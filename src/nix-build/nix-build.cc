@@ -408,7 +408,7 @@ int main(int argc, char ** argv)
                 env["NIX_STORE"] = store->storeDir;
 
                 for (auto & var : drv.env)
-                    env.emplace(var);
+                    env[var.first] = var.second;
 
                 restoreAffinity();
 
@@ -448,15 +448,17 @@ int main(int argc, char ** argv)
 
                 auto envPtrs = stringsToCharPtrs(envStrs);
 
+                auto shell = getEnv("NIX_BUILD_SHELL", "bash");
+
                 environ = envPtrs.data();
 
                 auto argPtrs = stringsToCharPtrs(args);
 
                 restoreSignals();
 
-                execvp(getEnv("NIX_BUILD_SHELL", "bash").c_str(), argPtrs.data());
+                execvp(shell.c_str(), argPtrs.data());
 
-                throw SysError("executing shell");
+                throw SysError("executing shell ‘%s’", shell);
             }
 
             // Ugly hackery to make "nix-build -A foo.all" produce symlinks

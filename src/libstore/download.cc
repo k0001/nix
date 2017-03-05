@@ -4,6 +4,7 @@
 #include "hash.hh"
 #include "store-api.hh"
 #include "archive.hh"
+#include "s3.hh"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -200,7 +201,7 @@ struct CurlDownloader : public Downloader
             curl_easy_setopt(req, CURLOPT_URL, request.uri.c_str());
             curl_easy_setopt(req, CURLOPT_FOLLOWLOCATION, 1L);
             curl_easy_setopt(req, CURLOPT_NOSIGNAL, 1);
-            curl_easy_setopt(req, CURLOPT_USERAGENT, ("Nix/" + nixVersion).c_str());
+            curl_easy_setopt(req, CURLOPT_USERAGENT, ("curl/" LIBCURL_VERSION " Nix/" + nixVersion).c_str());
             #if LIBCURL_VERSION_NUM >= 0x072b00
             curl_easy_setopt(req, CURLOPT_PIPEWAIT, 1);
             #endif
@@ -229,6 +230,11 @@ struct CurlDownloader : public Downloader
                 curl_easy_setopt(req, CURLOPT_SSL_VERIFYPEER, 0);
                 curl_easy_setopt(req, CURLOPT_SSL_VERIFYHOST, 0);
             }
+
+            /* If no file exist in the specified path, curl continues to work
+               anyway as if netrc support was disabled. */
+            curl_easy_setopt(req, CURLOPT_NETRC_FILE, settings.netrcFile.c_str());
+            curl_easy_setopt(req, CURLOPT_NETRC, CURL_NETRC_OPTIONAL);
 
             result.data = std::make_shared<std::string>();
         }
@@ -267,7 +273,12 @@ struct CurlDownloader : public Downloader
                     httpStatus == 403 ? Forbidden :
                     (httpStatus == 408 || httpStatus == 500 || httpStatus == 503
                         || httpStatus == 504  || httpStatus == 522 || httpStatus == 524
-                        || code == CURLE_COULDNT_RESOLVE_HOST) ? Transient :
+                        || code == CURLE_COULDNT_RESOLVE_HOST
+                        || code == CURLE_RECV_ERROR
+#if LIBCURL_VERSION_NUM >= 0x073200
+                        || code == CURLE_HTTP2_STREAM
+#endif
+                        ) ? Transient :
                     Misc;
 
                 attempt++;
@@ -480,6 +491,31 @@ struct CurlDownloader : public Downloader
         std::function<void(const DownloadResult &)> success,
         std::function<void(std::exception_ptr exc)> failure) override
     {
+        /* Ugly hack to support s3:// URIs. */
+        if (hasPrefix(request.uri, "s3://")) {
+            // FIXME: do this on a worker thread
+            sync2async<DownloadResult>(success, failure, [&]() -> DownloadResult {
+#ifdef ENABLE_S3
+                S3Helper s3Helper;
+                auto slash = request.uri.find('/', 5);
+                if (slash == std::string::npos)
+                    throw nix::Error("bad S3 URI ‘%s’", request.uri);
+                std::string bucketName(request.uri, 5, slash - 5);
+                std::string key(request.uri, slash + 1);
+                // FIXME: implement ETag
+                auto s3Res = s3Helper.getObject(bucketName, key);
+                DownloadResult res;
+                if (!s3Res.data)
+                    throw DownloadError(NotFound, fmt("S3 object ‘%s’ does not exist", request.uri));
+                res.data = s3Res.data;
+                return res;
+#else
+                throw nix::Error("cannot download ‘%s’ because Nix is not built with S3 support", request.uri);
+#endif
+            });
+            return;
+        }
+
         auto item = std::make_shared<DownloadItem>(*this, request);
         item->success = success;
         item->failure = failure;
@@ -581,6 +617,7 @@ Path Downloader::downloadCached(ref<Store> store, const string & url_, bool unpa
                 Hash hash = hashString(expectedHash ? expectedHash.type : htSHA256, *res.data);
                 info.path = store->makeFixedOutputPath(false, hash, name);
                 info.narHash = hashString(htSHA256, *sink.s);
+                info.ca = makeFixedOutputCA(false, hash);
                 store->addToStore(info, sink.s, false, true);
                 storePath = info.path;
             }
@@ -629,7 +666,7 @@ bool isUri(const string & s)
     size_t pos = s.find("://");
     if (pos == string::npos) return false;
     string scheme(s, 0, pos);
-    return scheme == "http" || scheme == "https" || scheme == "file" || scheme == "channel" || scheme == "git";
+    return scheme == "http" || scheme == "https" || scheme == "file" || scheme == "channel" || scheme == "git" || scheme == "s3";
 }
 
 

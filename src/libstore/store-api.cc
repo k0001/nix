@@ -676,6 +676,12 @@ Strings ValidPathInfo::shortRefs() const
 }
 
 
+std::string makeFixedOutputCA(bool recursive, const Hash & hash)
+{
+    return "fixed:" + (recursive ? (std::string) "r:" : "") + hash.to_string();
+}
+
+
 }
 
 
@@ -702,7 +708,11 @@ ref<Store> openStore(const std::string & uri_)
         }
         uri = uri_.substr(0, q);
     }
+    return openStore(uri, params);
+}
 
+ref<Store> openStore(const std::string & uri, const Store::Params & params)
+{
     for (auto fun : *RegisterStoreImplementation::implementations) {
         auto store = fun(uri, params);
         if (store) return ref<Store>(store);

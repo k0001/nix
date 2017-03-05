@@ -101,9 +101,9 @@ flag, e.g. <literal>--option gc-keep-outputs false</literal>.</para>
 
     <listitem><para>This option defines the maximum number of jobs
     that Nix will try to build in parallel.  The default is
-    <literal>1</literal>.  You should generally set it to the number
-    of CPUs in your system (e.g., <literal>2</literal> on an Athlon 64
-    X2).  It can be overridden using the <option
+    <literal>1</literal>. The special value <literal>auto</literal>
+    causes Nix to use the number of CPUs in your system.  It can be
+    overridden using the <option
     linkend='opt-max-jobs'>--max-jobs</option> (<option>-j</option>)
     command line switch.</para></listitem>
 
@@ -440,6 +440,29 @@ flag, e.g. <literal>--option gc-keep-outputs false</literal>.</para>
     <listitem><para>Whether HTTPS binary caches are required to have a
     certificate that can be verified. Defaults to
     <literal>true</literal>.</para></listitem>
+
+  </varlistentry>
+
+
+  <varlistentry><term><literal>netrc-file</literal></term>
+
+    <listitem><para>If set to an absolute path to a <filename>netrc</filename>
+    file, Nix will use the HTTP authentication credentials in this file when
+    trying to download from a remote host through HTTP or HTTPS. Defaults to
+    <filename>$NIX_CONF_DIR/netrc</filename>.</para>
+
+    <para>The <filename>netrc</filename> file consists of a list of
+    accounts in the following format:
+
+<screen>
+machine <replaceable>my-machine</replaceable>
+login <replaceable>my-username</replaceable>
+password <replaceable>my-password</replaceable>
+</screen>
+
+    For the exact syntax, see <link
+    xlink:href="https://ec.haxx.se/usingcurl-netrc.html">the
+    <literal>curl</literal> documentation.</link></para></listitem>
 
   </varlistentry>
 

@@ -128,7 +128,7 @@ struct ValidPathInfo
        of an output path of a derivation were actually produced by
        that derivation. In the intensional model, we have to trust
        that a particular output path was produced by a derivation; the
-       path name then implies the contents.)
+       path then implies the contents.)
 
        Ideally, the content-addressability assertion would just be a
        Boolean, and the store path would be computed from
@@ -642,6 +642,8 @@ void removeTempRoots();
    set to true *unless* you're going to collect garbage. */
 ref<Store> openStore(const std::string & uri = getEnv("NIX_REMOTE"));
 
+ref<Store> openStore(const std::string & uri, const Store::Params & params);
+
 
 void copyPaths(ref<Store> from, ref<Store> to, const Paths & storePaths, bool substitute = false);
 
@@ -685,6 +687,11 @@ string showPaths(const PathSet & paths);
 
 ValidPathInfo decodeValidPathInfo(std::istream & str,
     bool hashGiven = false);
+
+
+/* Compute the content-addressability assertion (ValidPathInfo::ca)
+   for paths created by makeFixedOutputPath() / addToStore(). */
+std::string makeFixedOutputCA(bool recursive, const Hash & hash);
 
 
 MakeError(SubstError, Error)

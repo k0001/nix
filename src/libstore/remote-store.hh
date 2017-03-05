@@ -22,7 +22,7 @@ class RemoteStore : public virtual Store
 {
 public:
 
-    RemoteStore(const Params & params, size_t maxConnections = std::numeric_limits<size_t>::max());
+    RemoteStore(const Params & params);
 
     /* Implementations of abstract store API methods. */
 
@@ -98,6 +98,8 @@ protected:
         void processStderr(Sink * sink = 0, Source * source = 0);
     };
 
+    ref<Connection> openConnectionWrapper();
+
     virtual ref<Connection> openConnection() = 0;
 
     void initConnection(Connection & conn);
@@ -106,6 +108,8 @@ protected:
 
 private:
 
+    std::atomic_bool failed{false};
+
     void setOptions(Connection & conn);
 };
 
@@ -113,7 +117,7 @@ class UDSRemoteStore : public LocalFSStore, public RemoteStore
 {
 public:
 
-    UDSRemoteStore(const Params & params, size_t maxConnections = std::numeric_limits<size_t>::max());
+    UDSRemoteStore(const Params & params);
 
     std::string getUri() override;
 

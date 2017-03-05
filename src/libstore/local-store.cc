@@ -1,4 +1,3 @@
-#include "config.h"
 #include "local-store.hh"
 #include "globals.hh"
 #include "archive.hh"
@@ -520,6 +519,8 @@ void LocalStore::checkDerivationOutputs(const Path & drvPath, const Derivation &
 uint64_t LocalStore::addValidPath(State & state,
     const ValidPathInfo & info, bool checkOutputs)
 {
+    assert(info.ca == "" || info.isContentAddressed(*this));
+
     state.stmtRegisterValidPath.use()
         (info.path)
         ("sha256:" + printHash(info.narHash))
@@ -919,7 +920,7 @@ void LocalStore::addToStore(const ValidPathInfo & info, const ref<std::string> &
             info.path % info.narHash.to_string() % h.to_string());
 
     if (requireSigs && !dontCheckSigs && !info.checkSignatures(*this, publicKeys))
-        throw Error(format("cannot import path ‘%s’ because it lacks a valid signature") % info.path);
+        throw Error("cannot add path ‘%s’ because it lacks a valid signature", info.path);
 
     addTempRoot(info.path);
 
@@ -1003,7 +1004,7 @@ Path LocalStore::addToStoreFromDump(const string & dump, const string & name,
             info.narHash = hash.first;
             info.narSize = hash.second;
             info.ultimate = true;
-            info.ca = "fixed:" + (recursive ? (std::string) "r:" : "") + h.to_string();
+            info.ca = makeFixedOutputCA(recursive, h);
             registerValidPath(info);
         }
 

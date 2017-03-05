@@ -708,6 +708,9 @@ static void opExport(Strings opFlags, Strings opArgs)
     for (auto & i : opFlags)
         throw UsageError(format("unknown flag ‘%1%’") % i);
 
+    for (auto & i : opArgs)
+        i = store->followLinksToStorePath(i);
+
     FdSink sink(STDOUT_FILENO);
     store->exportPaths(opArgs, sink);
 }
@@ -721,7 +724,7 @@ static void opImport(Strings opFlags, Strings opArgs)
     if (!opArgs.empty()) throw UsageError("no arguments expected");
 
     FdSource source(STDIN_FILENO);
-    Paths paths = store->importPaths(source, 0);
+    Paths paths = store->importPaths(source, nullptr, true);
 
     for (auto & i : paths)
         cout << format("%1%\n") % i << std::flush;
@@ -839,7 +842,7 @@ static void opServe(Strings opFlags, Strings opArgs)
         settings.maxSilentTime = readInt(in);
         settings.buildTimeout = readInt(in);
         if (GET_PROTOCOL_MINOR(clientVersion) >= 2)
-            settings.maxLogSize = readInt(in);
+            in >> settings.maxLogSize;
         if (GET_PROTOCOL_MINOR(clientVersion) >= 3) {
             settings.set("build-repeat", std::to_string(readInt(in)));
             settings.set("enforce-determinism", readInt(in) != 0 ? "true" : "false");
